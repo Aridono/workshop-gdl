@@ -1,9 +1,9 @@
-/**
+﻿/**
+ * gcc cb.c -lws2_32
  * Este aplicacion representa a una entidad crediticia la cual
  * concentra todos los creditos otorgados a los clientes de
  * diferentes entidades.
  */
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -14,30 +14,63 @@
 #define PORT 3550 /* El puerto que será abierto */
 #define BACKLOG 2 /* El número de conexiones permitidas */
 
+
 void doprocessing (int sock)
 {
-    int n;
-    char buffer[256];
-
-    memset(&(buffer), '0', 256);
+    char buffer[11];
+	char data[100];
+    //memset(&(buffer), '!', 10);
     int recvMsgSize;
     
     /* Receive message from client */
-    if ((recvMsgSize = recv(sock, buffer, 256, 0)) < 0)
-        perror("ERROR reading to socket");
-
+	if ((recvMsgSize = recv(sock, buffer,10, 0)) < 0){
+            perror("ERROR reading to socket");
+	}
+	
+	/* Prototype of a function to send the information */
+	buffer[10] = '\0'; //Clean of the garbage in the buffer
+	FILE *archivol;  
+	int i;
+    archivol = fopen("Loans.txt","r"); //Opening of the file to read
+        while (!feof(archivol)) // Loop that will read all the lines until the end of the file
+		{
+		  
+				 for (i=0;i<100;i++) // This loop works to optain all the characters of the file and put them into a array
+				 {
+					data[i] = fgetc(archivol);
+					if (data[i] == '\n') //If a char is a newline  then it get out of the loop
+					{
+						break;
+					}
+				 }
+				 if (strstr(data,buffer) != NULL){ //this if works to look the buffer into the array, it will return NULL if there arent any match
+					 for (i=0;i<100;i++)
+					 {	
+						printf("%c",data[i]); // A print to see if the function works
+						if (data[i] == '\n')
+						{	
+							send(sock,data,i,0); //It will send all the information that comes before a newline
+							break;
+						}
+					 }
+					 
+				}
+        }
+    fclose(archivol); //Close of the file  reader	
     /* Send received string and receive again until end of transmission */
     while (recvMsgSize > 0)      /* zero indicates end of transmission */
     {
-        /* Echo message back to client */
-        if (send(sock, buffer, recvMsgSize, 0) != recvMsgSize)
-            perror("ERROR writing to socket");
-
+			
+		/* Echo message back to client */
+         if (send(sock, buffer, recvMsgSize, 0) != recvMsgSize){
+			 perror("ERROR writing to socket");
+		} 	
+		
         /* See if there is more data to receive */
-        if ((recvMsgSize = recv(sock, buffer, 256, 0)) < 0)
+        if ((recvMsgSize = recv(sock, buffer,10, 0)) < 0){
             perror("ERROR reading to socket");
+		} 
     }
-
     closesocket(sock);    /* Close client socket */
 }
 
@@ -122,14 +155,13 @@ int main()
          exit(-1);
       }
 
-      printf("Se obtuvo una conexión desde %s\n", inet_ntoa(client.sin_addr) );
+      printf("Se obtuvo una conexion desde %s\n", inet_ntoa(client.sin_addr) );
       /* que mostrará la IP del cliente */
 
-      send(fd2,"Bienvenido a mi servidor.\n",22,0);
+      //send(fd2,"Bienvenido a mi servidor.\n",256,0);
       /* que enviará el mensaje de bienvenida al cliente */
       
       doprocessing(fd2);
 
    } /* end while */
 }
-
