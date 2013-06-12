@@ -1,4 +1,5 @@
-﻿/**
+﻿
+/**
  * gcc cb.c -lws2_32
  * Este aplicacion representa a una entidad crediticia la cual
  * concentra todos los creditos otorgados a los clientes de
