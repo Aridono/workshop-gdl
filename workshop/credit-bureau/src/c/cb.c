@@ -62,8 +62,10 @@ void find(char* buff, int sock)
 void write_f(char* id, char* rfc, char* name, char* add, char* loan,  char* date,  char* qua, char* act)
 {
 	FILE *archivol;  
-    archivol = fopen("Loans.txt","a"); //Opening of the file to add line
-	fprintf(archivol,"\n%s|%s|%s|%s|%s|%s|%s|%s",id,rfc,name,add,loan,date,qua,act);
+    archivol = fopen("Loans.txt","a+"); //Opening of the file to add line
+	fseek(archivol,0,2);
+	fprintf(archivol,"\n");
+	fprintf(archivol,"%s|%s|%s|%s|%s|%s|%s|%s\0",id,rfc,name,add,loan,date,qua,act);
     fclose(archivol); //Close of the file  reader
 }
 
@@ -72,28 +74,32 @@ void change_act(char* rfc,char* date)
 	FILE *archivol;
 	archivol = fopen("Loans.txt","r+");
 	char data[100];
-	int i,x=0;
+	int i;
 	while (!feof(archivol)) // Loop that will read all the lines until the end of the file
 		{
 				 for (i=0;i<100;i++) // This loop works to optain all the characters of the file and put them into a array
 				 {
 					data[i] = fgetc(archivol);
-					if (data[i] == '\n') //If a char is a newline  then it get out of the loop
-					{
-						data[i]='\0';
+					if ((data[i] == '\n'))  //If a char is a newline  then it get out of the loop
 						break;
-					}
 				 }
  				 if ((strstr(data,rfc) != NULL) && (strstr(data,date) != NULL)){ //this if works to look the buffer into the array, it will return NULL if there arent any match
-					
-						fseek(archivol,-2,1);
-						fputc('N',archivol);
-						fseek(archivol,2,1);
-				
+						if (fgetc(archivol) == -1)
+						{
+							fseek(archivol,-1,1);
+							fputc('N',archivol);
+							fseek(archivol,0,2);
+						} else {
+							fseek(archivol,-4,1);
+							fputc('N',archivol);
+							fseek(archivol,3,1);						
+						}
+
 				} 
         }
 	fclose(archivol);
 }
+	
 void doprocessing (int sock)
 {
     char buffer[100];
@@ -122,7 +128,7 @@ void doprocessing (int sock)
 	
 	for (i=0;i<100;i++)
 	{
-		if (buffer[i] == '_'){
+		if (buffer[i] == '|'){
 			p[c] = i;
 			c++;			
 		}
@@ -177,7 +183,7 @@ void doprocessing (int sock)
 	// DATE
 	for (i=0;i<(p[6]-p[5])-1;i++)
 		date[i] = buffer[(p[5]+1)+i];
-	for (i=0;i<10;i++){
+	for (i=0;i<11;i++){
 		if (date[i] == '!')
 			date[i]='\0';
 	}
@@ -193,18 +199,18 @@ void doprocessing (int sock)
 	// for (i=0;i<10;i++)
 		// printf("%c",rfc[i]);
 		
-	printf("%s %s %s %s %s %s %s %s",id,name,add,loan,date,sta,qua,act);
+	printf("%s %s\n",rfc,date);
 	
 	if (sta[0] == '0')
 	{
-		printf("Function 0");
+		//printf("Function 0");
 		find(rfc,sock);
 	}else if ( sta[0] == '1')
 	{
-		printf("Function 1");
+		//printf("Function 1");
 		change_act(rfc,date);
 	}else {
-		printf("Function 2");
+		//printf("Function 2");
 		write_f(id,rfc,name,add,loan,date,qua,act);
 	}
 	
